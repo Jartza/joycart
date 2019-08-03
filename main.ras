@@ -8,6 +8,11 @@ var
 	BL: array[10] of byte = ($20,$43,$45,$47,$49,$93,$95,$98,$9a,$49);
 	BR: array[10] of byte = ($20,$44,$46,$48,$4a,$94,$96,$99,$9b,$4a);
 
+	BOXTL: array[8] of byte = ($4f,$9d,$75,$20,$9d,$20,$75,$20);
+	BOXTR: array[8] of byte = ($9d,$77,$20,$76,$9d,$20,$20,$76);
+	BOXBL: array[8] of byte = ($75,$20,$4c,$9e,$20,$9e,$75,$20);
+	BOXBR: array[8] of byte = ($20,$76,$9e,$74,$20,$9e,$20,$76);
+
 	// Just some defines to arrow directions in tile arrays.
 	@define CL 0
 	@define LT 1
@@ -20,9 +25,6 @@ var
 	@define DNRT 8
 	@define BUT 9
 	
-	// Button press
-	@define PRS 16
-
 	// Arrow positions to joystick port value mapping
 	j1posx: array[16] of byte = (0,11,11,0,8,9,9,0,14,13,13,0,0,0,0,0);
 	j2posx: array[16] of byte = (0,27,27,0,24,25,25,0,30,29,29,0,0,0,0,0);
@@ -42,7 +44,42 @@ begin
 	printstring("PORT 1",0,40);
 	moveto(25,8,$04);
 	printstring("PORT 2",0,40);
-	
+	for ti := 0 to 6 step 2 do begin
+		moveto(9+ti,9,$04);
+		tile(BOXTL,BOXTR,BOXBL,BOXBR,4,40);
+		moveto(25+ti,9,$04);
+		tile(BOXTL,BOXTR,BOXBL,BOXBR,4,40);
+		moveto(9+ti,17,$04);
+		tile(BOXTL,BOXTR,BOXBL,BOXBR,5,40);
+		moveto(25+ti,17,$04);
+		tile(BOXTL,BOXTR,BOXBL,BOXBR,5,40);
+		moveto(7,11+ti,$04);
+		tile(BOXTL,BOXTR,BOXBL,BOXBR,6,40);		
+		moveto(23,11+ti,$04);
+		tile(BOXTL,BOXTR,BOXBL,BOXBR,6,40);		
+		moveto(15,11+ti,$04);
+		tile(BOXTL,BOXTR,BOXBL,BOXBR,7,40);	
+		moveto(31,11+ti,$04);
+		tile(BOXTL,BOXTR,BOXBL,BOXBR,7,40);	
+	end;
+	moveto(7,9,$04);
+	tile(BOXTL,BOXTR,BOXBL,BOXBR,0,40);
+	moveto(23,9,$04);
+	tile(BOXTL,BOXTR,BOXBL,BOXBR,0,40);
+	moveto(15,9,$04);
+	tile(BOXTL,BOXTR,BOXBL,BOXBR,1,40);
+	moveto(31,9,$04);
+	tile(BOXTL,BOXTR,BOXBL,BOXBR,1,40);
+	moveto(7,17,$04);
+	tile(BOXTL,BOXTR,BOXBL,BOXBR,2,40);
+	moveto(23,17,$04);
+	tile(BOXTL,BOXTR,BOXBL,BOXBR,2,40);
+	moveto(15,17,$04);
+	tile(BOXTL,BOXTR,BOXBL,BOXBR,3,40);
+	moveto(31,17,$04);
+	tile(BOXTL,BOXTR,BOXBL,BOXBR,3,40);
+
+
 	// Disable keyboard
 	poke(^56322,0,224);
 	
@@ -110,13 +147,13 @@ begin
 		if(b1old <> b1) then
 		begin
 			// Only erase if button was previously pressed
-			if(b1old <> @PRS) then
+			if(b1old = 0) then
 			begin
 				moveto(11,13,$04);
 				tile(TL,TR,BL,BR,@CL,40);
 			end;
 			b1old := b1;
-			if(b1 <> @PRS) then
+			if(b1 = 0) then
 			begin
 				moveto(11,13,$04);
 				tile(TL,TR,BL,BR,@BUT,40);
@@ -127,13 +164,13 @@ begin
 		if(b2old <> b2) then
 		begin
 			// Only erase if button was previously pressed
-			if(b2old <> @PRS) then
+			if(b2old = 0) then
 			begin
 				moveto(27,13,$04);
 				tile(TL,TR,BL,BR,@CL,40);
 			end;
 			b2old := b2;
-			if(b2 <> @PRS) then
+			if(b2 = 0) then
 			begin
 				moveto(27,13,$04);
 				tile(TL,TR,BL,BR,@BUT,40);
