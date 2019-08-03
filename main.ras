@@ -38,6 +38,10 @@ begin
 	clearscreen(WHITE,^$D800);
 	moveto(7,1,$04);
 	printstring("JOYSTICK TESTER BY FIREBAY",0,40);
+	moveto(9,8,$04);
+	printstring("PORT 1",0,40);
+	moveto(25,8,$04);
+	printstring("PORT 2",0,40);
 	
 	// Disable keyboard
 	poke(^56322,0,224);
