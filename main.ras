@@ -1,0 +1,140 @@
+program JoyTest;
+var  
+	js1,js2,b1,b2,b1old,b2old,js1old,js2old,js1oldx,js1oldy,js2oldx,js2oldy,tx,ty,ti: byte = 0;
+ 	
+	// Arrow tiles to different directions
+	TL: array[10] of byte = ($20,$1b,$1d,$1f,$21,$6b,$6d,$70,$72,$1f);
+	TR: array[10] of byte = ($20,$1c,$1e,$6f,$22,$6c,$6e,$71,$73,$1e);
+	BL: array[10] of byte = ($20,$43,$45,$47,$49,$93,$95,$98,$9a,$49);
+	BR: array[10] of byte = ($20,$44,$46,$48,$4a,$94,$96,$99,$9b,$4a);
+
+	// Just some defines to arrow directions in tile arrays.
+	@define CL 0
+	@define LT 1
+	@define RT 2
+	@define UP 3
+	@define DN 4
+	@define UPLT 5
+	@define UPRT 6
+	@define DNLT 7
+	@define DNRT 8
+	@define BUT 9
+	
+	// Button press
+	@define PRS 16
+
+	// Arrow positions to joystick port value mapping
+	j1posx: array[16] of byte = (0,11,11,0,8,9,9,0,14,13,13,0,0,0,0,0);
+	j2posx: array[16] of byte = (0,27,27,0,24,25,25,0,30,29,29,0,0,0,0,0);
+	jsposy: array[16] of byte = (0,10,16,0,13,11,15,0,13,11,15,0,0,0,0,0);
+	
+	// Arrow directions to joystick port value mapping
+	jsdir:  array[16] of byte = (0,@UP,@DN,0,@LT,@UPLT,@DNLT,0,@RT,@UPRT,@DNRT,0,0,0,0,0);
+
+	charset: incbin("cusfont.bin", $2000);
+
+begin
+	setcharsetlocation($2000);
+	clearscreen(WHITE,^$D800);
+	moveto(7,1,$04);
+	printstring("JOYSTICK TESTER BY FIREBAY",0,40);
+	
+	// Disable keyboard
+	poke(^56322,0,224);
+	
+
+	while (1=1) do
+	begin
+
+		// Read joystick directions
+		js1 := 15 - (peek(^56321,0) & 15);
+		js2 := 15 - (peek(^56320,0) & 15);
+
+		// Handle arrow drawing for port 1
+		tx := j1posx[js1];
+		ty := jsposy[js1];
+		ti := jsdir[js1];
+
+		if(js1old <> js1) then
+		begin
+			// Only erase old one if we have drawn something
+			if(js1oldx > 0) then
+			begin
+				moveto(js1oldx,js1oldy,$04);
+				tile(TL,TR,BL,BR,@CL,40);
+			end;
+			js1oldx := tx;
+			js1oldy := ty;
+			js1old := js1;
+			// Only draw arrow if position is not zero
+			if (tx > 0) then
+			begin
+				moveto(tx,ty,$04);
+				tile(TL,TR,BL,BR,ti,40);
+			end;
+		end;
+
+		// Handle arrow drawing for port 2
+		tx := j2posx[js2];
+		ty := jsposy[js2];
+		ti := jsdir[js2];
+
+		if(js2old <> js2) then
+		begin
+			// Only erase old one if we have drawn something
+			if(js2oldx > 0) then
+			begin
+				moveto(js2oldx,js2oldy,$04);
+				tile(TL,TR,BL,BR,@CL,40);
+			end;
+			js2oldx := tx;
+			js2oldy := ty;
+			js2old := js2;
+			// Only draw arrow if position is not zero
+			if (tx > 0) then
+			begin
+				moveto(tx,ty,$04);
+				tile(TL,TR,BL,BR,ti,40);
+			end;
+		end;
+	
+		// Read joystick buttons
+		b1 := peek(^56321,0) & 16;
+		b2 := peek(^56320,0) & 16;
+
+		// Handle button for port 1
+		if(b1old <> b1) then
+		begin
+			// Only erase if button was previously pressed
+			if(b1old <> @PRS) then
+			begin
+				moveto(11,13,$04);
+				tile(TL,TR,BL,BR,@CL,40);
+			end;
+			b1old := b1;
+			if(b1 <> @PRS) then
+			begin
+				moveto(11,13,$04);
+				tile(TL,TR,BL,BR,@BUT,40);
+			end;
+		end;
+
+		// Handle button for port 2
+		if(b2old <> b2) then
+		begin
+			// Only erase if button was previously pressed
+			if(b2old <> @PRS) then
+			begin
+				moveto(27,13,$04);
+				tile(TL,TR,BL,BR,@CL,40);
+			end;
+			b2old := b2;
+			if(b2 <> @PRS) then
+			begin
+				moveto(27,13,$04);
+				tile(TL,TR,BL,BR,@BUT,40);
+			end;
+		end;
+
+	end;
+end.
