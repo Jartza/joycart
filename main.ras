@@ -25,6 +25,9 @@ var
 	@define DNRT 8
 	@define BUT 9
 	
+	// Font location
+	@define FNTLOC $2000
+
 	// Arrow positions to joystick port value mapping
 	j1posx: array[16] of byte = (0,11,11,0,8,9,9,0,14,13,13,0,0,0,0,0);
 	j2posx: array[16] of byte = (0,27,27,0,24,25,25,0,30,29,29,0,0,0,0,0);
@@ -33,17 +36,29 @@ var
 	// Arrow directions to joystick port value mapping
 	jsdir:  array[16] of byte = (0,@UP,@DN,0,@LT,@UPLT,@DNLT,0,@RT,@UPRT,@DNRT,0,0,0,0,0);
 
-	charset: incbin("cusfont.bin", $2000);
+	charset: incbin("cusfont.bin", @FNTLOC);
 
 begin
-	setcharsetlocation($2000);
+	// Set custom font
+	setcharsetlocation(@FNTLOC);
+	// Fill screen with space
+	clearscreen($20,^$0400);
+	// White font
 	clearscreen(WHITE,^$D800);
+	// Set border color
+	poke(^53280,0,0);
+	// Set screen color
+	poke(^53281,0,0);
+	
+	// Put some texts on screen
 	moveto(7,1,$04);
 	printstring("JOYSTICK TESTER BY FIREBAY",0,40);
 	moveto(9,8,$04);
 	printstring("PORT 1",0,40);
 	moveto(25,8,$04);
 	printstring("PORT 2",0,40);
+	
+	// Draw surrounding boxes to joysticks with tile
 	for ti := 0 to 6 step 2 do begin
 		moveto(9+ti,9,$04);
 		tile(BOXTL,BOXTR,BOXBL,BOXBR,4,40);
@@ -62,6 +77,8 @@ begin
 		moveto(31,11+ti,$04);
 		tile(BOXTL,BOXTR,BOXBL,BOXBR,7,40);	
 	end;
+	
+	// Draw box corners with tile
 	moveto(7,9,$04);
 	tile(BOXTL,BOXTR,BOXBL,BOXBR,0,40);
 	moveto(23,9,$04);
@@ -79,11 +96,10 @@ begin
 	moveto(31,17,$04);
 	tile(BOXTL,BOXTR,BOXBL,BOXBR,3,40);
 
-
 	// Disable keyboard
 	poke(^56322,0,224);
 	
-
+	// Loop forever
 	while (1=1) do
 	begin
 
