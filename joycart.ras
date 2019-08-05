@@ -49,7 +49,7 @@ begin
 	poke(^53280,0,0);
 	// Set screen color
 	poke(^53281,0,0);
-	
+
 	// Put some texts on screen
 	moveto(7,1,$04);
 	printstring("JOYSTICK TESTER BY FIREBAY",0,40);
