@@ -8,10 +8,13 @@ var
 	BL: array[10] of byte = ($20,$43,$45,$47,$49,$93,$95,$98,$9a,$49);
 	BR: array[10] of byte = ($20,$44,$46,$48,$4a,$94,$96,$99,$9b,$4a);
 
-	BOXTL: array[8] of byte = ($4f,$9d,$75,$20,$9d,$20,$75,$20);
-	BOXTR: array[8] of byte = ($9d,$77,$20,$76,$9d,$20,$20,$76);
-	BOXBL: array[8] of byte = ($75,$20,$4c,$9e,$20,$9e,$75,$20);
-	BOXBR: array[8] of byte = ($20,$76,$9e,$74,$20,$9e,$20,$76);
+	// Box array: TL,T,TR,R,BR,B,BL,L
+	box: array[8] of byte = ($4f,$9d,$77,$76,$74,$9e,$4c,$75);
+	boxcolors: array[8] of byte = (1,1,15,11,11,11,15,1);
+	
+	// Screen address tables
+	scraddr: array[25] of integer;
+	clraddr: array[25] of integer;
 
 	// Just some defines to arrow directions in tile arrays.
 	@define CL 0
@@ -27,6 +30,12 @@ var
 	
 	// Font location
 	@define FNTLOC $2000
+	
+	// Screen defines
+    @define scr_mem $400
+    @define color_mem $D800
+    @define scr_width 40
+    @define scr_height 25
 
 	// Arrow positions to joystick port value mapping
 	j1posx: array[16] of byte = (0,11,11,0,8,9,9,0,14,13,13,0,0,0,0,0);
@@ -39,14 +48,22 @@ var
 	charset: incbin("cusfont.bin", @FNTLOC);
 
 begin
+	// Create address table
+    createaddresstable(scraddr, @scr_mem, @scr_width, @scr_height);
+    createaddresstable(clraddr, @color_mem, @scr_width, @scr_height);
+
 	// Set custom font
 	setcharsetlocation(@FNTLOC);
-	// Fill screen with space
-	clearscreen($20,^$0400);
-	// White font
-	clearscreen(WHITE,^$D800);
+
+	// Fill screen RAM with space
+	clearscreen($20,^@scr_mem);
+	
+	// Fill color RAM with white
+	clearscreen(WHITE,^@color_mem);
+	
 	// Set border color
 	poke(^53280,0,0);
+	
 	// Set screen color
 	poke(^53281,0,0);
 
@@ -58,46 +75,11 @@ begin
 	moveto(25,8,$04);
 	printstring("PORT 2",0,40);
 	
-	// Draw surrounding boxes to joysticks with tile
-	for ti := 0 to 6 step 2 do begin
-		moveto(9+ti,9,$04);
-		tile(BOXTL,BOXTR,BOXBL,BOXBR,4,40);
-		moveto(25+ti,9,$04);
-		tile(BOXTL,BOXTR,BOXBL,BOXBR,4,40);
-		moveto(9+ti,17,$04);
-		tile(BOXTL,BOXTR,BOXBL,BOXBR,5,40);
-		moveto(25+ti,17,$04);
-		tile(BOXTL,BOXTR,BOXBL,BOXBR,5,40);
-		moveto(7,11+ti,$04);
-		tile(BOXTL,BOXTR,BOXBL,BOXBR,6,40);		
-		moveto(23,11+ti,$04);
-		tile(BOXTL,BOXTR,BOXBL,BOXBR,6,40);		
-		moveto(15,11+ti,$04);
-		tile(BOXTL,BOXTR,BOXBL,BOXBR,7,40);	
-		moveto(31,11+ti,$04);
-		tile(BOXTL,BOXTR,BOXBL,BOXBR,7,40);	
-	end;
-	
-	// Draw box corners with tile
-	moveto(7,9,$04);
-	tile(BOXTL,BOXTR,BOXBL,BOXBR,0,40);
-	moveto(23,9,$04);
-	tile(BOXTL,BOXTR,BOXBL,BOXBR,0,40);
-	moveto(15,9,$04);
-	tile(BOXTL,BOXTR,BOXBL,BOXBR,1,40);
-	moveto(31,9,$04);
-	tile(BOXTL,BOXTR,BOXBL,BOXBR,1,40);
-	moveto(7,17,$04);
-	tile(BOXTL,BOXTR,BOXBL,BOXBR,2,40);
-	moveto(23,17,$04);
-	tile(BOXTL,BOXTR,BOXBL,BOXBR,2,40);
-	moveto(15,17,$04);
-	tile(BOXTL,BOXTR,BOXBL,BOXBR,3,40);
-	moveto(31,17,$04);
-	tile(BOXTL,BOXTR,BOXBL,BOXBR,3,40);
-
-	// Disable keyboard
-	poke(^56322,0,224);
+	// Draw surrounding boxes to joysticks with drawtextbox
+	drawtextbox(scraddr, box, 7, 9, 10, 10);
+	drawtextbox(scraddr, box, 23, 9, 10, 10);
+	drawtextbox(clraddr, boxcolors, 7, 9, 10, 10);
+	drawtextbox(clraddr, boxcolors, 23, 9, 10, 10);
 	
 	// Loop forever
 	while (1=1) do
