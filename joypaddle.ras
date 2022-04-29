@@ -384,6 +384,7 @@ end;
 begin
 	disableciainterrupts();
 	asm("	sei");
+	SetMemoryConfig(1,0,0);
 
 	// Create address table
 	createaddresstable(#scraddr, @scr_mem, @scr_width, @scr_height);
