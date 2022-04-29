@@ -382,8 +382,8 @@ begin
 end;
 
 begin
-	asm("	sei");
-	
+	disableciainterrupts();
+
 	// Create address table
 	createaddresstable(#scraddr, @scr_mem, @scr_width, @scr_height);
 	createaddresstable(#clraddr, @color_mem, @scr_width, @scr_height);
