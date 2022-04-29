@@ -383,6 +383,7 @@ end;
 
 begin
 	disableciainterrupts();
+	asm("	sei");
 
 	// Create address table
 	createaddresstable(#scraddr, @scr_mem, @scr_width, @scr_height);
@@ -405,18 +406,18 @@ begin
 		begin
 			while(Key::Held(Key::KF5)) do Key::Read();
 			mode := mode xor 1;
-			if (mode = 0) then
-				begin
-					title();
-					joyboxes();
-					clearvars();
-				end
-			else
-				begin
-					title();
-					paddleboxes();
-					clearvars();
+			case mode of
+				0 : begin
+						title();
+						joyboxes();
+						clearvars();
 					end;
+				1 : begin
+						title();
+						paddleboxes();
+						clearvars();
+					end;
+			end;
 		end;
 	end;
 end.
