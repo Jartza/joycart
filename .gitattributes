@@ -1,2 +1,4 @@
-*.ras linguist-language=Pascal
-
+*.ras   linguist-language=Pascal
+*.prg   binary
+*.crt   binary
+*.bin   binary
