@@ -44,8 +44,7 @@ var
 	j2posx: array[16] of byte = (0,27,27,0,24,25,25,0,30,29,29,0,0,0,0,0);
 	jsposy: array[16] of byte = (0,10,16,0,13,11,15,0,13,11,15,0,0,0,0,0);
 	padpos: array[8] of byte = (128,129,130,131,132,133,134,135);
-	padbut1: array[4] of byte = (83, 32, 83, 32);
-	padbut2: array[4] of byte = (83, 83, 32, 32);
+	padbut1: array[2] of byte = (83, 32);
 
 	// Paddle meter positions
 	
@@ -54,15 +53,9 @@ var
 
 	charset: incbin("cusfont.bin", @FNTLOC);
 
-procedure paddle();
+// Delay a while after switching paddle port to give SID time to read paddle value
+procedure paddledelay();
 begin
-	// Disable keyboard
-	poke(^56322, 0, 192);
-
-	// Switch to paddle port 1
-	poke(^56320, 0, 64);
-
-	// Delay a while
 	asm("
 	pha
 	tya
@@ -74,84 +67,69 @@ paddeldelay
 	tay
 	pla
 	");
+end;
 
+procedure drawpaddlebar(xloc:byte, yloc:byte, val:byte, but:byte);
+begin
+	moveto(xloc, yloc, $04);
+	for i := 0 to 16 do
+	begin
+		if (val > 7) then
+		begin
+			screenmemory[i] := padpos[7];
+			val := val - 8;
+		end
+		else if (val = 0) then
+		begin
+			screenmemory[i] := 32;
+		end
+		else
+		begin
+			screenmemory[i] := padpos[val];
+			val := 0;
+		end;
+	end;
+	screenmemory[16] := padbut1[but]
+end;
+
+procedure paddle();
+begin
+	// Disable keyboard
+	poke(^56322, 0, 192);
+
+	// Switch to paddle port 1
+	poke(^56320, 0, 64);
+
+	// Delay a while
+	paddledelay();
+
+	// Read paddle & button values
 	js1 := 127 - (peek(^54297, 0) >> 1);
 	js2 := 127 - (peek(^54298, 0) >> 1);
 	b1 := (peek(^56321, 0) >> 2) & 3;
 
+	// Smooth values by old value
 	js1 := (js1 + js1old) >> 1;
 	js2 := (js2 + js2old) >> 1;
 
 	js1old := js1;
 	js2old := js2;
 
-	moveto(1,11,$04);
-	for i := 0 to 16 do
-	begin
-		if (js1 > 7) then
-		begin
-			screenmemory[i] := padpos[7];
-			js1 := js1 - 8;
-		end
-		else if (js1 = 0) then
-		begin
-			screenmemory[i] := 32;
-		end
-		else
-		begin
-			screenmemory[i] := padpos[js1];
-			js1 := 0;
-		end;
-	end;
-	screenmemory[16] := padbut1[b1];
-
-	tx := js2 & 7;
-	ty := js2 >> 3;
-
-	moveto(1,18,$04);
-	for i := 0 to 16 do
-	begin
-		if (js2 > 7) then
-		begin
-			screenmemory[i] := padpos[7];
-			js2 := js2 - 8;
-		end
-		else if (js2 = 0) then
-		begin
-			screenmemory[i] := 32;
-		end
-		else
-		begin
-			screenmemory[i] := padpos[js2];
-			js2 := 0;
-		end;
-	end;
-	screenmemory[16] := padbut2[b1];
-
-	// Disable keyboard
-	poke(^56323, 0, 0);
-	poke(^56322, 0, 192);
+	drawpaddlebar(1, 11, js1, b1 & 1);
+	drawpaddlebar(1, 18, js2, (b1 >> 1) & 1);
 
 	// Switch to paddle port 2
 	poke(^56320, 0, 128);
 
 	// Delay a while
-	asm("
-	pha
-	tya
-	ldy #$d0
-paddeldelay2
-	nop
-	dey
-	bne paddeldelay2
-	tay
-	pla
-	");
+	paddledelay();
 
+	// Read paddle & button values
 	js1 := 127 - (peek(^54297, 0) >> 1);
 	js2 := 127 - (peek(^54298, 0) >> 1);
 	b1 := (peek(^56320, 0) >> 2) & 3;
 
+	// Smooth values by old value
 	js1 := (js1 + js1oldx) >> 1;
 	js2 := (js2 + js2oldx) >> 1;
 
@@ -159,55 +137,10 @@ paddeldelay2
 	js2oldx := js2;
 
 	//enable keyboard
-	poke(^56323, 0, 255);
 	poke(^56322, 0, 255);
 
-	for i := 0 to 255 do o:=i;
-	for i := 0 to 255 do o:=i;
-
-	moveto(22,11,$04);
-	for i := 0 to 16 do
-	begin
-		if (js1 > 7) then
-		begin
-			screenmemory[i] := padpos[7];
-			js1 := js1 - 8;
-		end
-		else if (js1 = 0) then
-		begin
-			screenmemory[i] := 32;
-		end
-		else
-		begin
-			screenmemory[i] := padpos[js1];
-			js1 := 0;
-		end;
-	end;
-	screenmemory[16] := padbut1[b1];
-
-	tx := js2 & 7;
-	ty := js2 >> 3;
-
-	moveto(22,18,$04);
-	for i := 0 to 16 do
-	begin
-		if (js2 > 7) then
-		begin
-			screenmemory[i] := padpos[7];
-			js2 := js2 - 8;
-		end
-		else if (js2 = 0) then
-		begin
-			screenmemory[i] := 32;
-		end
-		else
-		begin
-			screenmemory[i] := padpos[js2];
-			js2 := 0;
-		end;
-	end;
-	screenmemory[16] := padbut2[b1];
-
+	drawpaddlebar(22, 11, js1, b1 & 1);
+	drawpaddlebar(22, 18, js2, (b1 >> 1) & 1 );
 end;
 
 procedure joystick();
@@ -302,7 +235,12 @@ begin
 			tile(#TL,#TR,#BL,#BR,@BUT,40);
 		end;
 	end;
+end;
 
+procedure colorbox(xl:byte, yl:byte, wid:byte, hei:byte);
+begin
+	drawtextbox(#scraddr, #box, xl, yl, wid, hei);
+	drawtextbox(#clraddr, #boxcolors, xl, yl, wid, hei);
 end;
 
 procedure title();
@@ -328,17 +266,13 @@ begin
 	printstring("PORT 2",0,40);
 	
 	// Draw surrounding boxes with drawtextbox
-    drawtextbox(#scraddr, #box, 0, 1, 40, 3);
-    drawtextbox(#clraddr, #boxcolors, 0, 1, 40, 3);
+    colorbox(0, 1, 40, 3);
 end;
 
 procedure joyboxes();
 begin
-	drawtextbox(#scraddr, #box, 7, 9, 10, 10);
-	drawtextbox(#clraddr, #boxcolors, 7, 9, 10, 10);
-
-	drawtextbox(#scraddr, #box, 23, 9, 10, 10);
-	drawtextbox(#clraddr, #boxcolors, 23, 9, 10, 10);
+    colorbox(7, 9, 10, 10);
+    colorbox(23, 9, 10, 10);
 	
     moveto(4,24,$04);
     printstring("PRESS F5 TO SWITCH TO PADDLE TEST",0,40);
@@ -346,17 +280,10 @@ end;
 
 procedure paddleboxes();
 begin
-	drawtextbox(#scraddr, #box, 0, 10, 19, 3);
-	drawtextbox(#clraddr, #boxcolors, 0, 10, 19, 3);
-
-	drawtextbox(#scraddr, #box, 21, 10, 19, 3);
-	drawtextbox(#clraddr, #boxcolors, 21, 10, 19, 3);
-
-	drawtextbox(#scraddr, #box, 0, 17, 19, 3);
-	drawtextbox(#clraddr, #boxcolors, 0, 17, 19, 3);
-
-	drawtextbox(#scraddr, #box, 21, 17, 19, 3);
-	drawtextbox(#clraddr, #boxcolors, 21, 17, 19, 3);
+    colorbox(0, 10, 19, 3);
+    colorbox(21, 10, 19, 3);
+    colorbox(0, 17, 19, 3);
+    colorbox(21, 17, 19, 3);
 
     moveto(3,24,$04);
     printstring("PRESS F5 TO SWITCH TO JOYSTICK TEST",0,40);
@@ -384,7 +311,6 @@ end;
 begin
 	disableciainterrupts();
 	asm("	sei");
-	SetMemoryConfig(1,0,0);
 
 	// Create address table
 	createaddresstable(#scraddr, @scr_mem, @scr_width, @scr_height);
