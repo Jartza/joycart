@@ -1,5 +1,4 @@
 program JoyPaddle;
-@use "input/key"
 
 var
 	stickdata = record
