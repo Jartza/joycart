@@ -1,20 +1,40 @@
 program JoyPaddle;
 @use "input/key"
 
-var  
-	js1,js2,b1,b2,b1old,b2old,js1old,js2old,js1oldx,js1oldy,js2oldx,js2oldy,tx,ty,ti,mode,i,o,u: byte = 0;
+var
+	stickdata = record
+		val:byte;
+		x:byte;
+		y:byte;
+		but:byte;
+	end;
+
+	sticks : array[2] of stickdata;
+
+	js1 : byte = 0;
+	js2 : byte = 0;
+	b1 : byte = 0;
+	b2: byte = 0;
+	tx : byte = 0;
+	ty : byte = 0;
+	ti : byte = 0;
+	l : byte = 0;
+	pad1: byte = 0;
+	pad2: byte = 0;
+	padbut: byte = 0;
+	pads_old: array[4] of byte = (0,0,0,0);
  	
-	// Arrow tiles to different directions
+	// Map arrow tiles to directions
 	TL: array[10] of byte = ($20,$1b,$1d,$1f,$21,$6b,$6d,$70,$72,$1f);
 	TR: array[10] of byte = ($20,$1c,$1e,$6f,$22,$6c,$6e,$71,$73,$1e);
 	BL: array[10] of byte = ($20,$43,$45,$47,$49,$93,$95,$98,$9a,$49);
 	BR: array[10] of byte = ($20,$44,$46,$48,$4a,$94,$96,$99,$9b,$4a);
 
-	// Box array: TL,T,TR,R,BR,B,BL,L
+	// Surrounding box array & color array: TL,T,TR,R,BR,B,BL,L
 	box: array[8] of byte = ($4f,$9d,$77,$76,$74,$9e,$4c,$75);
 	boxcolors: array[8] of byte = (15,3,13,13,7,13,13,3);
 	
-	// Screen address tables
+	// Screen & colormemory address tables
 	scraddr: array[25] of integer;
 	clraddr: array[25] of integer;
 
@@ -39,15 +59,14 @@ var
 	@define scr_width 40
 	@define scr_height 25
 
-	// Arrow positions to joystick port value mapping
-	j1posx: array[16] of byte = (0,11,11,0,8,9,9,0,14,13,13,0,0,0,0,0);
-	j2posx: array[16] of byte = (0,27,27,0,24,25,25,0,30,29,29,0,0,0,0,0);
-	jsposy: array[16] of byte = (0,10,16,0,13,11,15,0,13,11,15,0,0,0,0,0);
-	padpos: array[8] of byte = (128,129,130,131,132,133,134,135);
-	padbut1: array[2] of byte = (83, 32);
+	// Joystick direction to arrow position mapping
+	jsposx: array[34] of byte = (0,11,11,0,8,9,9,0,14,13,13,0,0,0,0,0,0,27,27,0,24,25,25,0,30,29,29,0,0,0,0,0,11,27);
+	jsposy: array[17] of byte = (0,8,14,0,11,9,13,0,11,9,13,0,0,0,0,0,11);
 
-	// Paddle meter positions
-	
+	// Paddle meter bar values
+	padbar: array[8] of byte = (128,129,130,131,132,133,134,135);
+	padbuts: array[2] of byte = (83, 32);
+
 	// Arrow directions to joystick port value mapping
 	jsdir:  array[16] of byte = (0,@UP,@DN,0,@LT,@UPLT,@DNLT,0,@RT,@UPRT,@DNRT,0,0,0,0,0);
 
@@ -72,31 +91,30 @@ end;
 procedure drawpaddlebar(xloc:byte, yloc:byte, val:byte, but:byte);
 begin
 	moveto(xloc, yloc, $04);
-	for i := 0 to 16 do
+	for l := 0 to 16 do
 	begin
 		if (val > 7) then
 		begin
-			screenmemory[i] := padpos[7];
+			screenmemory[l] := padbar[7];
 			val := val - 8;
+			continue;
 		end
 		else if (val = 0) then
 		begin
-			screenmemory[i] := 32;
+			screenmemory[l] := 32;
+			continue;
 		end
 		else
 		begin
-			screenmemory[i] := padpos[val];
+			screenmemory[l] := padbar[val];
 			val := 0;
 		end;
 	end;
-	screenmemory[16] := padbut1[but]
+	screenmemory[16] := padbuts[but]
 end;
 
 procedure paddle();
 begin
-	// Disable keyboard
-	poke(^56322, 0, 192);
-
 	// Switch to paddle port 1
 	poke(^56320, 0, 64);
 
@@ -104,19 +122,18 @@ begin
 	paddledelay();
 
 	// Read paddle & button values
-	js1 := 127 - (peek(^54297, 0) >> 1);
-	js2 := 127 - (peek(^54298, 0) >> 1);
-	b1 := (peek(^56321, 0) >> 2) & 3;
+	pad1 := 127 - (peek(^54297, 0) >> 1);
+	pad2 := 127 - (peek(^54298, 0) >> 1);
+	padbut := (peek(^56321, 0) >> 2) & 3;
 
 	// Smooth values by old value
-	js1 := (js1 + js1old) >> 1;
-	js2 := (js2 + js2old) >> 1;
+	pad1 := (pad1 + pads_old[0]) >> 1;
+	pad2 := (pad2 + pads_old[1]) >> 1;
+	pads_old[0] := pad1;
+	pads_old[1] := pad2;
 
-	js1old := js1;
-	js2old := js2;
-
-	drawpaddlebar(1, 11, js1, b1 & 1);
-	drawpaddlebar(1, 18, js2, (b1 >> 1) & 1);
+	drawpaddlebar(1, 21, pad1, padbut & 1);
+	drawpaddlebar(1, 23, pad2, (padbut >> 1) & 1);
 
 	// Switch to paddle port 2
 	poke(^56320, 0, 128);
@@ -125,116 +142,80 @@ begin
 	paddledelay();
 
 	// Read paddle & button values
-	js1 := 127 - (peek(^54297, 0) >> 1);
-	js2 := 127 - (peek(^54298, 0) >> 1);
-	b1 := (peek(^56320, 0) >> 2) & 3;
+	pad1 := 127 - (peek(^54297, 0) >> 1);
+	pad2 := 127 - (peek(^54298, 0) >> 1);
+	padbut := (peek(^56320, 0) >> 2) & 3;
 
 	// Smooth values by old value
-	js1 := (js1 + js1oldx) >> 1;
-	js2 := (js2 + js2oldx) >> 1;
+	pad1 := (pad1 + pads_old[2]) >> 1;
+	pad2 := (pad2 + pads_old[3]) >> 1;
+	pads_old[2] := pad1;
+	pads_old[3] := pad2;
 
-	js1oldx := js1;
-	js2oldx := js2;
+	drawpaddlebar(22, 21, pad1, padbut & 1);
+	drawpaddlebar(22, 23, pad2, (padbut >> 1) & 1);
 
-	//enable keyboard
-	poke(^56322, 0, 255);
+	// Disable paddle reading
+	poke(^56320, 0, 0);
+end;
 
-	drawpaddlebar(22, 11, js1, b1 & 1);
-	drawpaddlebar(22, 18, js2, (b1 >> 1) & 1 );
+procedure drawstick(ind:byte, sval:byte, bval:byte);
+begin
+	// Handle arrow drawing
+	tx := jsposx[sval + (ind * 16)];
+	ty := jsposy[sval];
+	ti := jsdir[sval];
+
+	if (sticks[ind].val <> sval) then
+	begin
+		// Erase only if we have drawn something
+		if (sticks[ind].x > 0) then
+		begin
+			moveto(sticks[ind].x, sticks[ind].y, $04);
+			tile(#TL,#TR,#BL,#BR,@CL,40);
+		end;
+		sticks[ind].x := tx;
+		sticks[ind].y := ty;
+		sticks[ind].val := sval;
+
+		// Draw new arrow if position is not zero
+		if (tx > 0) then
+		begin
+			moveto(tx,ty,$04);
+			tile(#TL,#TR,#BL,#BR,ti,40);
+		end;
+	end;
+
+	// Handle button drawing
+	if(sticks[ind].but <> bval) then
+	begin
+		// Only erase if button was previously drawn
+		if(sticks[ind].but = 0) then
+		begin
+			moveto(jsposx[32+ind],jsposy[16],$04);
+			tile(#TL,#TR,#BL,#BR,@CL,40);
+		end;
+		sticks[ind].but := bval;
+		if(bval = 0) then
+		begin
+			moveto(jsposx[32+ind],jsposy[16],$04);
+			tile(#TL,#TR,#BL,#BR,@BUT,40);
+		end;
+	end;
 end;
 
 procedure joystick();
 begin
-
 	// Read joystick directions
 	js1 := 15 - (peek(^56321,0) & 15);
 	js2 := 15 - (peek(^56320,0) & 15);
-
-	// Handle arrow drawing for port 1
-	tx := j1posx[js1];
-	ty := jsposy[js1];
-	ti := jsdir[js1];
-
-	if(js1old <> js1) then
-	begin
-		// Only erase old one if we have drawn something
-		if(js1oldx > 0) then
-		begin
-			moveto(js1oldx,js1oldy,$04);
-			tile(#TL,#TR,#BL,#BR,@CL,40);
-		end;
-		js1oldx := tx;
-		js1oldy := ty;
-		js1old := js1;
-		// Only draw arrow if position is not zero
-		if (tx > 0) then
-		begin
-			moveto(tx,ty,$04);
-			tile(#TL,#TR,#BL,#BR,ti,40);
-		end;
-	end;
-
-	// Handle arrow drawing for port 2
-	tx := j2posx[js2];
-	ty := jsposy[js2];
-	ti := jsdir[js2];
-
-	if(js2old <> js2) then
-	begin
-		// Only erase old one if we have drawn something
-		if(js2oldx > 0) then
-		begin
-			moveto(js2oldx,js2oldy,$04);
-			tile(#TL,#TR,#BL,#BR,@CL,40);
-		end;
-		js2oldx := tx;
-		js2oldy := ty;
-		js2old := js2;
-		// Only draw arrow if position is not zero
-		if (tx > 0) then
-		begin
-			moveto(tx,ty,$04);
-			tile(#TL,#TR,#BL,#BR,ti,40);
-		end;
-	end;
 
 	// Read joystick buttons
 	b1 := peek(^56321,0) & 16;
 	b2 := peek(^56320,0) & 16;
 
-	// Handle button for port 1
-	if(b1old <> b1) then
-	begin
-		// Only erase if button was previously pressed
-		if(b1old = 0) then
-		begin
-			moveto(11,13,$04);
-			tile(#TL,#TR,#BL,#BR,@CL,40);
-		end;
-		b1old := b1;
-		if(b1 = 0) then
-		begin
-			moveto(11,13,$04);
-			tile(#TL,#TR,#BL,#BR,@BUT,40);
-		end;
-	end;
-
-	// Handle button for port 2
-	if(b2old <> b2) then
-	begin
-		// Only erase if button was previously pressed
-		if(b2old = 0) then
-		begin
-			moveto(27,13,$04);
-			tile(#TL,#TR,#BL,#BR,@CL,40);
-		end;
-		b2old := b2;
-		if(b2 = 0) then
-		begin
-			moveto(27,13,$04);
-			tile(#TL,#TR,#BL,#BR,@BUT,40);
-		end;
-	end;
+	drawstick(0, js1, b1);
+	drawstick(1, js2, b2);
 end;
 
 procedure colorbox(xl:byte, yl:byte, wid:byte, hei:byte);
@@ -260,57 +241,39 @@ begin
 	// Put some texts on screen
 	moveto(1,2,$04);
 	printstring("FIREBAY REFURB  JOYSTICK/PADDLE TESTER",0,40);
-	moveto(9,7,$04);
+	moveto(9,5,$04);
 	printstring("PORT 1",0,40);
-	moveto(25,7,$04);
+	moveto(25,5,$04);
 	printstring("PORT 2",0,40);
 	
-	// Draw surrounding boxes with drawtextbox
+	moveto(0,18,$04);
+	printstring("PADDLES PORT 1 X/Y",0,40);
+	moveto(22,18,$04);
+	printstring("PADDLES PORT 2 X/Y",0,40);
+
+	// Title surround box
     colorbox(0, 1, 40, 3);
 end;
 
 procedure joyboxes();
 begin
-    colorbox(7, 9, 10, 10);
-    colorbox(23, 9, 10, 10);
-	
-    moveto(4,24,$04);
-    printstring("PRESS F5 TO SWITCH TO PADDLE TEST",0,40);
+    colorbox(7, 7, 10, 10);
+    colorbox(23, 7, 10, 10);
 end;
 
 procedure paddleboxes();
 begin
-    colorbox(0, 10, 19, 3);
-    colorbox(21, 10, 19, 3);
-    colorbox(0, 17, 19, 3);
-    colorbox(21, 17, 19, 3);
-
-    moveto(3,24,$04);
-    printstring("PRESS F5 TO SWITCH TO JOYSTICK TEST",0,40);
-end;
-
-procedure clearvars();
-begin
-	js1 := 0;
-	js2 := 0;
-	b1 := 0;
-	b2 := 0;
-	b1old := 0;
-	b2old := 0;
-	js1old := 0;
-	js2old := 0;
-	js1oldx := 0;
-	js1oldy := 0;
-	js2oldx := 0;
-	js2oldy := 0;
-	tx := 0;
-	ty := 0;
-	ti := 0;
+    colorbox(0, 20, 19, 5);
+    colorbox(21, 20, 19, 5);
 end;
 
 begin
+	// Disable interrupts fully
 	disableciainterrupts();
 	asm("	sei");
+
+	// Disable keyboard
+	poke(^56322,0,224);
 
 	// Create address table
 	createaddresstable(#scraddr, @scr_mem, @scr_width, @scr_height);
@@ -319,32 +282,15 @@ begin
 	// Set custom font
 	setcharsetlocation(@FNTLOC);
 
-	// Joystick is default
+	// Draw title and boxes
 	title();
 	joyboxes();
-	mode := 0;
+	paddleboxes();
 
 	// Loop forever
 	while (1=1) do
 	begin
-		if (mode = 0) then joystick() else paddle();
-		Key::Read();
-		if (Key::Held(Key::KF5)) then
-		begin
-			while(Key::Held(Key::KF5)) do Key::Read();
-			mode := mode xor 1;
-			case mode of
-				0 : begin
-						title();
-						joyboxes();
-						clearvars();
-					end;
-				1 : begin
-						title();
-						paddleboxes();
-						clearvars();
-					end;
-			end;
-		end;
+		paddle();
+		joystick();
 	end;
 end.
