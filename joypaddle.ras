@@ -6,6 +6,8 @@ Made with TRSE: https://turborascal.com
 
 Export cusfont.flf (start 0, end 160) as cusfont.bin before building.
 
+Remember to check "Exomize"-tickbox if you want to build CRT
+
 */
 program JoyPaddle;
 
