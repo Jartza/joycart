@@ -8,7 +8,7 @@
 	This code demonstrates the use of tiles, textboxes and reading joysticks
 	and paddles "the raw way".
 	
-	JoyPaddle 8k cart binary made from TRSE output:
+	JoyPaddle 8k cart binary (for real eprom cart) made from TRSE output:
 		cartconv -i joypaddle.crt -o joypaddletemp.bin (cartconv is VICE tool)
 		dd if=joypaddletemp.bin of=joypaddle.bin bs=1k count=8
 */
