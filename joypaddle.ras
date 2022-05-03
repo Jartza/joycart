@@ -3,12 +3,16 @@
 	
 	Made with TRSE: https://turborascal.com
 	
-	Remember to check "Exomize"-tickbox if you want to build CRT
+	Remember to check "Exomize"-tickbox if you want to build CRT!
+	
+	This code demonstrates the use of tiles, textboxes and reading joysticks
+	and paddles "the raw way".
 */
 
 program JoyPaddle;
 
 @export "cusfont.flf" "cusfont.bin" 160
+
 
 var
 	stickdata = record
